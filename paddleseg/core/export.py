@@ -28,6 +28,7 @@ def export(args, model=None, save_dir=None, use_ema=False):
     assert args.config is not None, \
         'No configuration file specified, please set --config'
     cfg = Config(args.config)
+    use_fd_inference = True
     if not model:
         # save model
         builder = SegBuilder(cfg)
@@ -38,6 +39,7 @@ def export(args, model=None, save_dir=None, use_ema=False):
             logger.info('Loaded trained params successfully.')
         if args.output_op != 'none':
             model = WrappedModel(model, args.output_op)
+        use_fd_inference = False
         utils.show_env_info()
         utils.show_cfg_info(cfg)
     else:
@@ -62,7 +64,7 @@ def export(args, model=None, save_dir=None, use_ema=False):
         save_name = 'model'
         yaml_name = 'deploy.yaml'
 
-    if uniform_output_enabled:
+    if uniform_output_enabled and use_fd_inference == True:
         inference_model_path = os.path.join(save_dir, "inference", save_name)
         yml_file = os.path.join(save_dir, "inference", yaml_name)
         if use_ema:
@@ -95,21 +97,27 @@ def export(args, model=None, save_dir=None, use_ema=False):
     if cfg.dic.get("pdx_model_name", None):
         deploy_info["Global"] = {}
         deploy_info["Global"]["model_name"] = cfg.dic["pdx_model_name"]
-    if cfg.dic.get("hpi_config_path", None):
-        with open(cfg.dic["hpi_config_path"], "r") as fp:
-            hpi_config = yaml.load(fp, Loader=yaml.SafeLoader)
-        if hpi_config["Hpi"]["backend_config"].get("paddle_tensorrt", None):
-            hpi_config["Hpi"]["supported_backends"]["gpu"].remove(
-                "paddle_tensorrt")
-            del hpi_config['Hpi']['backend_config']['paddle_tensorrt']
-        if hpi_config["Hpi"]["backend_config"].get("tensorrt", None):
-            hpi_config["Hpi"]["supported_backends"]["gpu"].remove("tensorrt")
-            del hpi_config['Hpi']['backend_config']['tensorrt']
-        hpi_config["Hpi"]["selected_backends"]["gpu"] = "paddle_infer"
-        deploy_info["Hpi"] = hpi_config["Hpi"]
+    if cfg.dic.get("uniform_output_enabled", False):
+        dynamic_shapes = {
+            'x': [[1, 3, 128, 256], [1, 3, 512, 1024], [1, 3, 1024, 2048]]
+        }
+        supported_batch_size = [1, 100]
+
+        backend_keys = ['paddle_infer', 'tensorrt']
+        hpi_config = {
+            "backend_configs": {
+                key: {
+                    "dynamic_shapes" if key == "tensorrt" else "trt_dynamic_shapes":
+                    dynamic_shapes
+                }
+                for key in backend_keys
+            }
+        }
+        deploy_info["Hpi"] = hpi_config
     msg = '\n---------------Deploy Information---------------\n'
     msg += str(yaml.dump(deploy_info))
-    logger.info(msg)
+    if use_fd_inference == False:
+        logger.info(msg)
 
     with open(yml_file, 'w') as file:
         yaml.dump(deploy_info, file)
