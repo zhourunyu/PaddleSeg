@@ -183,8 +183,8 @@ def main(args):
     if uniform_output_enabled:
         if not os.path.exists(args.save_dir):
             os.makedirs(args.save_dir)
-        if os.path.exists(os.path.join(args.save_dir, "train_results.json")):
-            os.remove(os.path.join(args.save_dir, "train_results.json"))
+        if os.path.exists(os.path.join(args.save_dir, "train_result.json")):
+            os.remove(os.path.join(args.save_dir, "train_result.json"))
         with open(os.path.join(args.save_dir, "config.yaml"), "w") as f:
             yaml.dump(cfg.dic, f)
     print_mem_info = cfg.dic.pop('print_mem_info', True)

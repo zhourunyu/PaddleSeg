@@ -37,7 +37,7 @@ def update_train_results(args,
                          ema=False):
     assert last_num >= 1
     cfg = Config(args.config)
-    train_results_path = os.path.join(args.save_dir, "train_results.json")
+    train_results_path = os.path.join(args.save_dir, "train_result.json")
     save_model_tag = ["pdparams", "pdopt", "pdstates"]
     save_inference_tag = [
         "inference_config", "pdmodel", "pdiparams", "pdiparams.info"
