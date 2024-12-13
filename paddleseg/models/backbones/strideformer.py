@@ -521,6 +521,7 @@ class Sea_Attention(nn.Layer):
         xx_column = paddle.matmul(attn_column, vcolumn)  # B nH W C
         xx_column = self.proj_encode_column(
             xx_column.transpose([0, 1, 3, 2]).reshape([B, self.dh, 1, W]))
+        xx_column = xx_column.expand([B, self.dh, H, W])
 
         xx = paddle.add(xx_row, xx_column)  # [B, self.dh, H, W] 
         xx = paddle.add(v, xx)

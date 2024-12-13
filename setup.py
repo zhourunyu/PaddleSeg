@@ -21,7 +21,7 @@ with open("requirements.txt") as file:
 
 setup(
     name='paddleseg',
-    version='0.0.0.dev0',
+    version='2.10.0',
     description=('End-to-end image segmentation kit based on PaddlePaddle.'),
     long_description='',
     url='https://github.com/PaddlePaddle/PaddleSeg',
